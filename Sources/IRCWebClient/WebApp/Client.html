@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>MiniIRC ✭ ZeeZide</title>
+    <script src="https://cdn.jsdelivr.net/npm/jdenticon@2.1.0"></script>
+    <link rel="stylesheet" media="all" href="Styles/Client.css" />
+    <script src="Model/ClientUtils.js"         ></script>
+    <script src="Model/ClientConnection.js"    ></script>
+    <script src="Model/ChatItem.js"            ></script>
+    <script src="ViewControllers/SidebarVC.js" ></script>
+    <script src="ViewControllers/MessagesVC.js"></script>
+    <script src="ViewControllers/MainVC.js"    ></script>
+  </head>
+  <body>
+    <div class="chat">
+      <aside>
+        <section class="info">
+          <h1>MiniIRC ✭ ZeeZide</h1>
+          <div class="username"></div>
+        </section>
+        
+        <section class="server list">
+          <ul id='serverList'>
+            <li id="server" class="selected">Server</li>
+          </ul>
+        </section>
+
+        <section class="channels list hidden">
+          <h2>Channels</h2>
+          <ul id='channelList'>
+          </ul>
+        </section>
+        
+        <section class="queries list hidden">
+          <h2>Direct Messages</h2>
+          <ul id='queryList'>
+          </ul>
+        </section>
+      </aside>
+
+      <main>
+        <header>
+          <h1 id='chatTitle'>Server</h1>
+        </header>
+
+        <section>
+        </section>
+
+        <footer>
+          <form>
+            <input type="text" placeholder="Enter IRC commands (or /help)" />
+          </form>
+        </footer>
+      </main>
+    </div>
+    <script>
+      (function() {
+        var controller = new MainVC();
+        controller.loadView();
+        controller.viewDidAppear();
+      }())
+    </script>
+  </body>
+</html>

@@ -1,0 +1,148 @@
+/*
+  Thanks go to [@slashmo](https://github.com/slashmo) for the original
+  flexbox layout and CSS setup!
+*/
+
+* {
+  margin:        0;
+  padding:       0;
+  box-sizing:    border-box;
+  font-family:   'Helvetica Neue', sans-serif;
+}
+
+.chat {
+  height:  100vh;
+  width:   100%;
+  display: flex;
+}
+
+/* sidebar */
+
+.chat aside {
+  width:         240px;
+  background:    #13202D;
+  flex-shrink:   0;
+  color:         white;
+  padding:       1em 0;
+}
+
+.chat aside section.info {
+  padding:       0 10px;
+}
+.chat aside section.info h1 {
+  font-size:     1.2em;
+  text-align:    center;
+  color:         #EEE;
+}
+.chat aside section h2 {
+  font-size:     0.9em;
+  padding-left:  1em;
+  color:         #999;
+  text-align:    center;
+}
+.chat aside section.info .username {
+  margin-top:    2px;
+  font-size:     0.8em;
+  text-align:    center;
+}
+
+.chat aside section.list {
+  margin-top:    10px;
+}
+
+.chat aside section ul li {
+  list-style:    none;
+  font-size:     0.9em;
+  padding:       6px 1.5em;
+  color:         rgba(255, 255, 255, 0.6);
+}
+.chat aside section ul li.selected {
+  background:    #52AC65;
+  color:         white;
+}
+.chat aside section ul li:hover {
+  background:    #666;
+  color:         white;
+}
+.chat aside section ul li:hover.selected {
+  background:    #428C45;
+}
+
+/* main */
+
+.chat main {
+  width:          100%;
+  height:         100%;
+  display:        flex;
+  flex-direction: column;
+}
+
+.chat main header {
+  padding:       0.7em 1em;
+  border-bottom: 1px solid #DDD;
+}
+.chat main header h1 {
+  font-size:     1.2em;
+}
+
+.chat main footer {
+  width:         100%;
+  padding:       10px;
+  border-top:    1px solid #DDD;
+}
+.chat footer input {
+  width:         100%;
+  border:        2px solid #EEE;
+  border-radius: 4px;
+  padding:       10px;
+  outline:       none;
+  font-size:     14px;
+}
+
+
+/* body */
+
+.chat main section {
+  padding:       10px 0;
+  flex-grow:     1;
+  overflow-y:    scroll;
+}
+.chat main section article {
+  padding:       10px 20px;
+  display:       flex;
+}
+.chat main section article .avatar {
+  width:         38px;
+  height:        38px;
+  background:    #EEE;
+  border-radius: 4px;
+  border:        1px solid #DDD;
+  flex-shrink:   0;
+}
+
+.chat main section article.system {
+  color: #AAA;
+}
+
+.chat main section article .content {
+  margin-left:   10px;
+}
+.chat main section article .content .info {
+  font-size:     0.8em;
+}
+.chat main section article .content .info .author {
+  font-weight:   700;
+}
+.chat main section article .content p {
+  font-size:     0.9em;
+  margin-top:    4px;
+}
+.chat main section article .content p .mention {
+  background:    #ECF5FB;
+  color:         #3275B4;
+  padding:       2px;
+  border-radius: 4px;
+}
+.hidden {
+  visibility:    hidden;
+}
