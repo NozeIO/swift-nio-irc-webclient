@@ -16,6 +16,7 @@ let package = Package(
     targets: [
         .target(name: "IRCWebClient", 
                 dependencies: [ "NIOHTTP1", "NIOWebSocket", 
-                                "NIOFoundationCompat", "IRC" ])
+                                "NIOFoundationCompat", "IRC" ]),
+        .target(name: "ircwebclientd", dependencies: [ "IRCWebClient" ])
     ]
 )
