@@ -23,6 +23,12 @@ open class IRCWebClientEndPoint: ChannelInboundHandler {
   
   public typealias InboundIn   = HTTPServerRequestPart
   public typealias OutboundOut = HTTPServerResponsePart
+  
+  let content : ByteBuffer
+  
+  public init(_ content: ByteBuffer) {
+    self.content = content
+  }
 
   open func channelRead(ctx: ChannelHandlerContext, data: NIOAny) {
     let reqPart = self.unwrapInboundIn(data)
@@ -75,46 +81,4 @@ fileprivate extension IRCWebClientEndPoint {
     ctx.flush()
   }
 
-}
-
-
-import Foundation
-
-fileprivate let content : ByteBuffer = {
-  var bb = ByteBufferAllocator().buffer(capacity: 4096)
-  
-  let patterns = [
-    "title":                         "MiniIRC ✭ ZeeZide",
-    "style":                         rsrc_Client_css,
-    "script.model.ClientUtils":      rsrc_ClientUtils_js,
-    "script.model.ClientConnection": rsrc_ClientConnection_js,
-    "script.model.ChatItem":         rsrc_ChatItem_js,
-    "script.vc.SidebarVC":           rsrc_SidebarVC_js,
-    "script.vc.MessagesVC":          rsrc_MessagesVC_js,
-    "script.vc.MainVC":              rsrc_MainVC_js
-  ]
-  
-  var s = rsrc_ClientInline_html
-  for ( variable, text ) in patterns {
-    if variable.lowercased().contains("script") {
-      s = s.replacingOccurrences(of: "{{\(variable)}}", with: text)
-    }
-    else {
-      s = s.replacingOccurrences(of: "{{\(variable)}}", with: text.htmlEscaped)
-    }
-  }
-  
-  bb.changeCapacity(to: s.utf8.count)
-  bb.write(string: s)
-  
-  return bb
-}()
-
-fileprivate extension String {
-  var htmlEscaped : String {
-    let escapeMap : [ Character : String ] = [
-      "<" : "&lt;", ">": "&gt;", "&": "&amp;", "\"": "&quot;"
-    ]
-    return map { escapeMap[$0] ?? String($0) }.reduce("", +)
-  }
 }

@@ -59,7 +59,7 @@
         {{script.vc.MessagesVC}}
         {{script.vc.MainVC}}
         
-        var controller = new MainVC();
+        var controller = new MainVC("{{defaultNick}}", "{{endpoint}}");
         controller.loadView();
         controller.viewDidAppear();
       }())

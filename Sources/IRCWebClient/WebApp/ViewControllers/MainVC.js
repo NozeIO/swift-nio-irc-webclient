@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-const MainVC = function(nick, host, port) {
+const MainVC = function(nick, webSockEndPointURL) {
   const self = this;
   
   self.serverTarget = "server";
@@ -209,8 +209,7 @@ const MainVC = function(nick, host, port) {
   };
   
   self.connection = new Connection(
-    host || "localhost",
-    port || 1337,
+    webSockEndPointURL || "ws://localhost:1337/websocket",
     self.onMessage
   );
   
@@ -218,12 +217,7 @@ const MainVC = function(nick, host, port) {
     self.notice("Connecting to IRC bridge ...");
     self.connection.connect(function() {
       self.connection.call("JOIN", "#NIO");
-      self.connection.call("JOIN", "#NozeIO");
-      self.connection.call("JOIN", "#ZeeQL");
-      self.connection.call("JOIN", "#ApacheExpress");
-      self.connection.call("JOIN", "#PLSwift");
-      self.connection.call("JOIN", "#SwiftXcode");
-      self.connection.call("JOIN", "#mod_swift");
+      self.connection.call("JOIN", "#SwiftDE");
     });
   };
 
@@ -232,7 +226,7 @@ const MainVC = function(nick, host, port) {
     self.messages.viewDidAppear();
     
     window.setTimeout(function() {
-      self.sidebar.addQueryView("Eliza")
+      self.sendMessageToTarget("Eliza", "Moin")
     }, 3000);
 
     self.connect();

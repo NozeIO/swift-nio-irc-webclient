@@ -40,6 +40,8 @@ open class IRCWebClientServer {
     open var backlog        : Int             = 256
     open var ircHost        : String?         = nil
     open var ircPort        : Int?            = nil
+    open var externalHost   : String?         = nil
+    open var externalPort   : Int?            = nil
 
     public init(eventLoopGroup: EventLoopGroup? = nil) {
       self.eventLoopGroup = eventLoopGroup
@@ -135,6 +137,7 @@ open class IRCWebClientServer {
   
   open func makeBootstrap() -> ServerBootstrap {
     let upgrader = self.upgrader
+    let endPoint = IRCWebClientEndPoint(content)
     
     let reuseAddrOpt = ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET),
                                              SO_REUSEADDR)
@@ -153,7 +156,7 @@ open class IRCWebClientServer {
           .configureHTTPServerPipeline(withServerUpgrade: config)
           .then {
             channel.pipeline.add(name: "de.zeezide.irc.miniirc.web.http",
-                                 handler: IRCWebClientEndPoint())
+                                 handler: endPoint)
           }
       }
       
@@ -164,5 +167,55 @@ open class IRCWebClientServer {
       .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
     
     return bootstrap
+  }
+  
+  
+  // MARK: - HTML Payload
+  
+  open lazy var content : ByteBuffer = {
+    var bb = ByteBufferAllocator().buffer(capacity: 4096)
+    
+    let host = configuration.externalHost ?? configuration.host ?? "localhost"
+    let port = configuration.externalPort ?? configuration.port
+    
+    let patterns = [
+      "title":                         "MiniIRC ✭ ZeeZide",
+      "endpoint":                      "ws://\(host):\(port)/websocket",
+      "defaultNick":                   "nick",
+      "style":                         rsrc_Client_css,
+      "script.model.ClientUtils":      rsrc_ClientUtils_js,
+      "script.model.ClientConnection": rsrc_ClientConnection_js,
+      "script.model.ChatItem":         rsrc_ChatItem_js,
+      "script.vc.SidebarVC":           rsrc_SidebarVC_js,
+      "script.vc.MessagesVC":          rsrc_MessagesVC_js,
+      "script.vc.MainVC":              rsrc_MainVC_js
+    ]
+    
+    var s = rsrc_ClientInline_html
+    
+    for ( variable, text ) in patterns {
+      if variable.lowercased().contains("script") {
+        s = s.replacingOccurrences(of: "{{\(variable)}}", with: text)
+      }
+      else {
+        s = s.replacingOccurrences(of: "{{\(variable)}}",
+                                   with: text.htmlEscaped)
+      }
+    }
+    
+    bb.changeCapacity(to: s.utf8.count)
+    bb.write(string: s)
+    
+    return bb
+  }()
+
+}
+
+fileprivate extension String {
+  var htmlEscaped : String {
+    let escapeMap : [ Character : String ] = [
+      "<" : "&lt;", ">": "&gt;", "&": "&amp;", "\"": "&quot;"
+    ]
+    return map { escapeMap[$0] ?? String($0) }.reduce("", +)
   }
 }

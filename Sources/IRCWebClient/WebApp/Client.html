@@ -56,7 +56,7 @@
     </div>
     <script>
       (function() {
-        var controller = new MainVC();
+        var controller = new MainVC("nick", "ws://localhost:1337/websocket");
         controller.loadView();
         controller.viewDidAppear();
       }())

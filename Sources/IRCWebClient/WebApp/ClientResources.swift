@@ -1,5 +1,5 @@
 // Generated from Model/ChatItem.js
-//   on Tue Apr 24 23:52:35 CEST 2018
+//   on Wed Apr 25 15:21:09 CEST 2018
 //
 let rsrc_ChatItem_js =
 """
@@ -27,7 +27,7 @@ const ChatItem = function(message, sender, time, isSystem, isRead) {
 };
 """
 // Generated from Model/ClientConnection.js
-//   on Tue Apr 24 23:52:35 CEST 2018
+//   on Wed Apr 25 15:21:09 CEST 2018
 //
 let rsrc_ClientConnection_js =
 """
@@ -57,15 +57,15 @@ const IRCMessage = function(origin, target, command, args) {
 };
 
 /// Wraps the WebSocket connection to the IRC bridge.
-const Connection = function(host, port, onMessage) {
+const Connection = function(webSockEndPointURL, onMessage) {
   const self     = this;
   self.onMessage = onMessage;
   
   self.connect = function(onConnect) {
     self.onConnect      = onConnect;
     self.isFirstReceive = true;
-    self.socket         = new WebSocket(`ws://${host}:${port}/websocket`);
-
+    self.socket         = new WebSocket(webSockEndPointURL);
+    
     self.socket.onmessage = function(msg) {
       let ircMessage = null;
       try {
@@ -103,7 +103,7 @@ const Connection = function(host, port, onMessage) {
 }
 """
 // Generated from Model/ClientUtils.js
-//   on Tue Apr 24 23:52:35 CEST 2018
+//   on Wed Apr 25 15:21:09 CEST 2018
 //
 let rsrc_ClientUtils_js =
 """
@@ -139,7 +139,7 @@ function htmlEscape(str) {
 }
 """
 // Generated from ViewControllers/MainVC.js
-//   on Tue Apr 24 23:52:35 CEST 2018
+//   on Wed Apr 25 15:21:09 CEST 2018
 //
 let rsrc_MainVC_js =
 """
@@ -157,7 +157,7 @@ let rsrc_MainVC_js =
 //
 //===----------------------------------------------------------------------===//
 
-const MainVC = function(nick, host, port) {
+const MainVC = function(nick, webSockEndPointURL) {
   const self = this;
   
   self.serverTarget = "server";
@@ -354,8 +354,7 @@ const MainVC = function(nick, host, port) {
   };
   
   self.connection = new Connection(
-    host || "localhost",
-    port || 1337,
+    webSockEndPointURL || "ws://localhost:1337/websocket",
     self.onMessage
   );
   
@@ -363,12 +362,7 @@ const MainVC = function(nick, host, port) {
     self.notice("Connecting to IRC bridge ...");
     self.connection.connect(function() {
       self.connection.call("JOIN", "#NIO");
-      self.connection.call("JOIN", "#NozeIO");
-      self.connection.call("JOIN", "#ZeeQL");
-      self.connection.call("JOIN", "#ApacheExpress");
-      self.connection.call("JOIN", "#PLSwift");
-      self.connection.call("JOIN", "#SwiftXcode");
-      self.connection.call("JOIN", "#mod_swift");
+      self.connection.call("JOIN", "#SwiftDE");
     });
   };
 
@@ -377,7 +371,7 @@ const MainVC = function(nick, host, port) {
     self.messages.viewDidAppear();
     
     window.setTimeout(function() {
-      self.sidebar.addQueryView("Eliza")
+      self.sendMessageToTarget("Eliza", "Moin")
     }, 3000);
 
     self.connect();
@@ -385,7 +379,7 @@ const MainVC = function(nick, host, port) {
 }
 """
 // Generated from ViewControllers/MessagesVC.js
-//   on Tue Apr 24 23:52:35 CEST 2018
+//   on Wed Apr 25 15:21:09 CEST 2018
 //
 let rsrc_MessagesVC_js =
 """
@@ -480,7 +474,7 @@ const MessagesVC = function(onLine) {
 };
 """
 // Generated from ViewControllers/SidebarVC.js
-//   on Tue Apr 24 23:52:35 CEST 2018
+//   on Wed Apr 25 15:21:09 CEST 2018
 //
 let rsrc_SidebarVC_js =
 """
@@ -596,7 +590,7 @@ const SidebarVC = function(onTargetChange) {
 };
 """
 // Generated from Styles/Client.css
-//   on Tue Apr 24 23:52:35 CEST 2018
+//   on Wed Apr 25 15:21:09 CEST 2018
 //
 let rsrc_Client_css =
 """
@@ -750,7 +744,7 @@ let rsrc_Client_css =
 }
 """
 // Generated from ClientInline.html
-//   on Tue Apr 24 23:52:35 CEST 2018
+//   on Wed Apr 25 15:21:09 CEST 2018
 //
 let rsrc_ClientInline_html =
 """
@@ -815,7 +809,7 @@ let rsrc_ClientInline_html =
         {{script.vc.MessagesVC}}
         {{script.vc.MainVC}}
         
-        var controller = new MainVC();
+        var controller = new MainVC("{{defaultNick}}", "{{endpoint}}");
         controller.loadView();
         controller.viewDidAppear();
       }())

@@ -24,15 +24,15 @@ const IRCMessage = function(origin, target, command, args) {
 };
 
 /// Wraps the WebSocket connection to the IRC bridge.
-const Connection = function(host, port, onMessage) {
+const Connection = function(webSockEndPointURL, onMessage) {
   const self     = this;
   self.onMessage = onMessage;
   
   self.connect = function(onConnect) {
     self.onConnect      = onConnect;
     self.isFirstReceive = true;
-    self.socket         = new WebSocket(`ws://${host}:${port}/websocket`);
-
+    self.socket         = new WebSocket(webSockEndPointURL);
+    
     self.socket.onmessage = function(msg) {
       let ircMessage = null;
       try {
