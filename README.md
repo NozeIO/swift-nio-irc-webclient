@@ -23,7 +23,7 @@ servers!
 On the surface it is a very simple chat webapp, with basic support for
 channels and direct messages:
 
-<img src="http://zeezide.de/img/irc-eliza-720x781.png" width="640" />
+<img src="http://zeezide.de/img/irc-eliza.png" width="640" />
 
 **Sometimes** a live demo installation is running on
 [http://irc.noze.io/](http://irc.noze.io/).
