@@ -23,7 +23,7 @@ servers!
 On the surface it is a very simple chat webapp, with basic support for
 channels and direct messages:
 
-<img src="http://zeezide.de/img/irc-eliza-720x781.png" />
+<img src="http://zeezide.de/img/irc-eliza-720x781.png" width="640" />
 
 **Sometimes** a live demo installation is running on
 [http://irc.noze.io/](http://irc.noze.io/).
@@ -72,7 +72,7 @@ Yet it also works as a standalone web application (you can drag the
 into your browser.
 
 The client app is located in
-[Sources/IRCWebClient/WebApp/](Sources/IRCWebClient/WebApp/README.md).
+[Sources/IRCWebClient/WebApp](Sources/IRCWebClient/WebApp/README.md).
 
 
 ## Importing the module using Swift Package Manager
@@ -104,8 +104,15 @@ let webServer = IRCWebClientServer()
 webServer.listen()
 ```
 
-Check the [Configuration](Sources/IRCWebClient/IRCWebClientServer) object 
-for the supported configuration options.
+Check the
+[Configuration](Sources/IRCWebClient/IRCWebClientServer.swift)
+object for the supported configuration options.
+
+One can configure three connection parameters:
+1. host/port - this is the address the HTTP server is running on
+2. ircHost/port - this is the address of the IRC server
+3. externalHost/port - the address the browser is using to connect to the
+   HTTP server. Often but not necessarily the same like 1.
 
 ### Who
 
