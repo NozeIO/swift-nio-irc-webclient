@@ -55,7 +55,7 @@ open class IRCWebClientServer {
     self.configuration  = configuration
     
     self.eventLoopGroup = configuration.eventLoopGroup
-      ?? MultiThreadedEventLoopGroup(numThreads: System.coreCount)
+           ?? MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
   }
 
   public private(set) var serverChannel : Channel?
