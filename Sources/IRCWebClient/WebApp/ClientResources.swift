@@ -1,5 +1,5 @@
 // Generated from Model/ChatItem.js
-//   on Wed Apr 25 15:21:09 CEST 2018
+//   on Fri Jun  8 16:03:12 CEST 2018
 //
 let rsrc_ChatItem_js =
 """
@@ -27,7 +27,7 @@ const ChatItem = function(message, sender, time, isSystem, isRead) {
 };
 """
 // Generated from Model/ClientConnection.js
-//   on Wed Apr 25 15:21:09 CEST 2018
+//   on Fri Jun  8 16:03:12 CEST 2018
 //
 let rsrc_ClientConnection_js =
 """
@@ -103,7 +103,7 @@ const Connection = function(webSockEndPointURL, onMessage) {
 }
 """
 // Generated from Model/ClientUtils.js
-//   on Wed Apr 25 15:21:09 CEST 2018
+//   on Fri Jun  8 16:03:12 CEST 2018
 //
 let rsrc_ClientUtils_js =
 """
@@ -139,7 +139,7 @@ function htmlEscape(str) {
 }
 """
 // Generated from ViewControllers/MainVC.js
-//   on Wed Apr 25 15:21:09 CEST 2018
+//   on Fri Jun  8 16:03:12 CEST 2018
 //
 let rsrc_MainVC_js =
 """
@@ -361,25 +361,22 @@ const MainVC = function(nick, webSockEndPointURL) {
   self.connect = function() {
     self.notice("Connecting to IRC bridge ...");
     self.connection.connect(function() {
-      self.connection.call("JOIN", "#NIO");
-      self.connection.call("JOIN", "#SwiftDE");
+      {{script.vc.MainVC.onConnect}}
     });
   };
-
+  
   self.viewDidAppear = function() {
     const self = this;
     self.messages.viewDidAppear();
     
-    window.setTimeout(function() {
-      self.sendMessageToTarget("Eliza", "Moin")
-    }, 3000);
+    {{script.app.onStartup}}
 
     self.connect();
   };
 }
 """
 // Generated from ViewControllers/MessagesVC.js
-//   on Wed Apr 25 15:21:09 CEST 2018
+//   on Fri Jun  8 16:03:12 CEST 2018
 //
 let rsrc_MessagesVC_js =
 """
@@ -474,7 +471,7 @@ const MessagesVC = function(onLine) {
 };
 """
 // Generated from ViewControllers/SidebarVC.js
-//   on Wed Apr 25 15:21:09 CEST 2018
+//   on Fri Jun  8 16:03:12 CEST 2018
 //
 let rsrc_SidebarVC_js =
 """
@@ -590,7 +587,7 @@ const SidebarVC = function(onTargetChange) {
 };
 """
 // Generated from Styles/Client.css
-//   on Wed Apr 25 15:21:09 CEST 2018
+//   on Fri Jun  8 16:03:12 CEST 2018
 //
 let rsrc_Client_css =
 """
@@ -744,7 +741,7 @@ let rsrc_Client_css =
 }
 """
 // Generated from ClientInline.html
-//   on Wed Apr 25 15:21:09 CEST 2018
+//   on Fri Jun  8 16:03:12 CEST 2018
 //
 let rsrc_ClientInline_html =
 """

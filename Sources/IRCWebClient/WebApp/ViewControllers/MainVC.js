@@ -216,18 +216,15 @@ const MainVC = function(nick, webSockEndPointURL) {
   self.connect = function() {
     self.notice("Connecting to IRC bridge ...");
     self.connection.connect(function() {
-      self.connection.call("JOIN", "#NIO");
-      self.connection.call("JOIN", "#SwiftDE");
+      {{script.vc.MainVC.onConnect}}
     });
   };
-
+  
   self.viewDidAppear = function() {
     const self = this;
     self.messages.viewDidAppear();
     
-    window.setTimeout(function() {
-      self.sendMessageToTarget("Eliza", "Moin")
-    }, 3000);
+    {{script.app.onStartup}}
 
     self.connect();
   };
