@@ -16,6 +16,7 @@ import NIO
 import NIOHTTP1
 import NIOWebSocket
 import class NIOConcurrencyHelpers.Atomic
+import struct Foundation.TimeInterval
 import IRC
 
 /**
@@ -42,6 +43,16 @@ open class IRCWebClientServer {
     open var ircPort        : Int?            = nil
     open var externalHost   : String?         = nil
     open var externalPort   : Int?            = nil
+    
+    // When the IRC client successfully connects, those channels are
+    // automagically joined.
+    open var autoJoinChannels       : Set<String> = [ "#NIO", "#SwiftDE" ]
+    
+    // We can automatically send some messages after a timeout
+    open var autoSendMessageTimeout : TimeInterval = 3.0
+    open var autoSendMessages       : [ ( String, String ) ] = [
+      ( "Eliza", "Moin" )
+    ]
 
     public init(eventLoopGroup: EventLoopGroup? = nil) {
       self.eventLoopGroup = eventLoopGroup
@@ -178,17 +189,42 @@ open class IRCWebClientServer {
     let host = configuration.externalHost ?? configuration.host ?? "localhost"
     let port = configuration.externalPort ?? configuration.port
     
+    func escapeJSString(_ s: String) -> String { return s } // TODO
+    
+    let onConnect = configuration.autoJoinChannels.map { channel in
+      "self.connection.call('JOIN', '\(escapeJSString(channel))');"
+    }.joined(separator: "\n")
+    
+    let onStartup : String = {
+      // TBD: this should probably just move to onConnect
+      guard !configuration.autoSendMessages.isEmpty else { return "" }
+      let timeoutInMS = Int(configuration.autoSendMessageTimeout * 1000)
+      var ms = "window.setTimeout(function() {\n"
+      for ( recipient, message ) in configuration.autoSendMessages {
+        ms += "   self.sendMessageToTarget("
+        ms += "'\(escapeJSString(recipient))'"
+        ms += ", "
+        ms += "'\(escapeJSString(message))'"
+        ms += ");\n"
+      }
+      ms += "}, \(timeoutInMS));\n"
+      return ms
+    }()
+    
     let patterns = [
-      "title":                         "MiniIRC ✭ ZeeZide",
-      "endpoint":                      "ws://\(host):\(port)/websocket",
-      "defaultNick":                   "nick",
-      "style":                         rsrc_Client_css,
-      "script.model.ClientUtils":      rsrc_ClientUtils_js,
-      "script.model.ClientConnection": rsrc_ClientConnection_js,
-      "script.model.ChatItem":         rsrc_ChatItem_js,
-      "script.vc.SidebarVC":           rsrc_SidebarVC_js,
-      "script.vc.MessagesVC":          rsrc_MessagesVC_js,
-      "script.vc.MainVC":              rsrc_MainVC_js
+      "title"                         : "MiniIRC ✭ ZeeZide",
+      "endpoint"                      : "ws://\(host):\(port)/websocket",
+      "defaultNick"                   : "nick",
+      "style"                         : rsrc_Client_css,
+      "script.model.ClientUtils"      : rsrc_ClientUtils_js,
+      "script.model.ClientConnection" : rsrc_ClientConnection_js,
+      "script.model.ChatItem"         : rsrc_ChatItem_js,
+      "script.vc.SidebarVC"           : rsrc_SidebarVC_js,
+      "script.vc.MessagesVC"          : rsrc_MessagesVC_js,
+      "script.vc.MainVC"              : rsrc_MainVC_js,
+      
+      "script.vc.MainVC.onConnect"    : onConnect,
+      "script.app.onStartup"          : onStartup
     ]
     
     var s = rsrc_ClientInline_html
