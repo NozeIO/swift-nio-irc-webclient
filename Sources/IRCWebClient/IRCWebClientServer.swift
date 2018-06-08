@@ -184,8 +184,6 @@ open class IRCWebClientServer {
   // MARK: - HTML Payload
   
   open lazy var content : ByteBuffer = {
-    var bb = ByteBufferAllocator().buffer(capacity: 4096)
-    
     let host = configuration.externalHost ?? configuration.host ?? "localhost"
     let port = configuration.externalPort ?? configuration.port
     
@@ -211,34 +209,48 @@ open class IRCWebClientServer {
       return ms
     }()
     
-    let patterns = [
-      "title"                         : "MiniIRC ✭ ZeeZide",
-      "endpoint"                      : "ws://\(host):\(port)/websocket",
-      "defaultNick"                   : "nick",
+    let scripts = [
       "style"                         : rsrc_Client_css,
+      "script.vc.MainVC.onConnect"    : onConnect,
+      "script.app.onStartup"          : onStartup,
+      
       "script.model.ClientUtils"      : rsrc_ClientUtils_js,
       "script.model.ClientConnection" : rsrc_ClientConnection_js,
       "script.model.ChatItem"         : rsrc_ChatItem_js,
       "script.vc.SidebarVC"           : rsrc_SidebarVC_js,
       "script.vc.MessagesVC"          : rsrc_MessagesVC_js,
       "script.vc.MainVC"              : rsrc_MainVC_js,
-      
-      "script.vc.MainVC.onConnect"    : onConnect,
-      "script.app.onStartup"          : onStartup
     ]
     
-    var s = rsrc_ClientInline_html
+    var patterns = [
+      "title"                         : "MiniIRC ✭ ZeeZide",
+      "endpoint"                      : "ws://\(host):\(port)/websocket",
+      "defaultNick"                   : "nick",
+    ]
     
-    for ( variable, text ) in patterns {
-      if variable.lowercased().contains("script") {
-        s = s.replacingOccurrences(of: "{{\(variable)}}", with: text)
+    func replacePatterns(in s: String, using variables: [ String : String ])
+         -> String
+    {
+      var s = s
+      for ( variable, text ) in variables {
+        if variable.lowercased().contains("script") {
+          s = s.replacingOccurrences(of: "{{\(variable)}}", with: text)
+        }
+        else {
+          s = s.replacingOccurrences(of: "{{\(variable)}}",
+                                     with: text.htmlEscaped)
+        }
       }
-      else {
-        s = s.replacingOccurrences(of: "{{\(variable)}}",
-                                   with: text.htmlEscaped)
-      }
+      return s
     }
     
+    for ( name, script ) in scripts {
+      patterns[name] = replacePatterns(in: script, using: patterns)
+    }
+    
+    var s = replacePatterns(in: rsrc_ClientInline_html, using: patterns)
+    
+    var bb = ByteBufferAllocator().buffer(capacity: 4096)
     bb.changeCapacity(to: s.utf8.count)
     bb.write(string: s)
     
