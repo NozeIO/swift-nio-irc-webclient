@@ -50,10 +50,8 @@ open class IRCWebClientServer {
     
     // We can automatically send some messages after a timeout
     open var autoSendMessageTimeout : TimeInterval = 3.0
-    open var autoSendMessages       : [ ( String, String ) ] = [
-      ( "Eliza", "Moin" )
-    ]
-
+    open var autoSendMessages       : [ ( String, String ) ] = []
+    
     public init(eventLoopGroup: EventLoopGroup? = nil) {
       self.eventLoopGroup = eventLoopGroup
     }
