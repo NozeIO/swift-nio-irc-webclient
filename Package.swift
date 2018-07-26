@@ -10,8 +10,8 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-nio.git", 
                  from: "1.8.0"),
-        .package(url: "https://github.com/NozeIO/swift-nio-irc.git",
-                 from: "0.5.1")
+        .package(url: "https://github.com/NozeIO/swift-nio-irc-client.git",
+                 from: "0.6.0")
     ],
     targets: [
         .target(name: "IRCWebClient", 
