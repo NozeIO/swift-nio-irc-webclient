@@ -249,7 +249,7 @@ open class IRCWebClientServer {
     var s = replacePatterns(in: rsrc_ClientInline_html, using: patterns)
     
     var bb = ByteBufferAllocator().buffer(capacity: 4096)
-    bb.changeCapacity(to: s.utf8.count)
+    bb.reserveCapacity(s.utf8.count)
     bb.write(string: s)
     
     return bb

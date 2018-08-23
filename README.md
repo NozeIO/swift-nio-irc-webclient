@@ -3,7 +3,7 @@
 ![Swift4](https://img.shields.io/badge/swift-4-blue.svg)
 ![macOS](https://img.shields.io/badge/os-macOS-green.svg?style=flat)
 ![tuxOS](https://img.shields.io/badge/os-tuxOS-green.svg?style=flat)
-![Travis](https://travis-ci.org/NozeIO/swift-nio-irc-webclient.svg?branch=master)
+<a href="https://travis-ci.org/NozeIO/swift-nio-irc-webclient"><img src="https://travis-ci.org/NozeIO/swift-nio-irc-webclient.svg?branch=master" /></a>
 
 This is a very simple WebSocket based IRC WebClient/Server.
 
