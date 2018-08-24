@@ -184,6 +184,7 @@ open class IRCWebClientServer {
   open lazy var content : ByteBuffer = {
     let host = configuration.externalHost ?? configuration.host ?? "localhost"
     let port = configuration.externalPort ?? configuration.port
+    let scheme = port == 443 ? "wss" : "ws"
     
     func escapeJSString(_ s: String) -> String { return s } // TODO
     
@@ -222,7 +223,7 @@ open class IRCWebClientServer {
     
     var patterns = [
       "title"                         : "MiniIRC ✭ ZeeZide",
-      "endpoint"                      : "ws://\(host):\(port)/websocket",
+      "endpoint"                      : "\(scheme)://\(host):\(port)/websocket",
       "defaultNick"                   : "nick",
     ]
     
