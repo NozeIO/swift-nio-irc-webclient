@@ -2,7 +2,7 @@
 //
 // This source file is part of the swift-nio-irc open source project
 //
-// Copyright (c) 2018 ZeeZide GmbH. and the swift-nio-irc project authors
+// Copyright (c) 2018-2019 ZeeZide GmbH. and the swift-nio-irc project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
@@ -103,29 +103,55 @@ open class IRCWebSocketBridge: ChannelInboundHandler {
   open func channelRead(ctx: ChannelHandlerContext, data: NIOAny) {
     let frame = self.unwrapInboundIn(data)
     
-    switch frame.opcode {
-      case .connectionClose:
-        self.receivedClose(ctx: ctx, frame: frame)
-      
-      case .ping:
-        self.pong(ctx: ctx, frame: frame)
-      
-      case .unknownControl, .unknownNonControl:
-        self.closeOnError(ctx: ctx)
-      
-      case .continuation:
-        print("CONT")
-      
-      case .text:
-        handleInput(frame.unmaskedData, in: ctx)
-      
-      case .binary:
-        handleInput(frame.unmaskedData, in: ctx)
+    #if swift(>=5) // NIO 2 API
+      switch frame.opcode {
+        case .connectionClose:
+          self.receivedClose(ctx: ctx, frame: frame)
+        
+        case .ping:
+          self.pong(ctx: ctx, frame: frame)
+        
+        case .continuation:
+          print("CONT")
+        
+        case .text:
+          handleInput(frame.unmaskedData, in: ctx)
+        
+        case .binary:
+          handleInput(frame.unmaskedData, in: ctx)
 
-      case .pong:
-        print("unexpected pong?")
-        self.closeOnError(ctx: ctx)
-    }
+        case .pong:
+          print("unexpected pong?")
+          self.closeOnError(ctx: ctx)
+        
+        default:
+          self.closeOnError(ctx: ctx)
+      }
+    #else // NIO 1 API
+      switch frame.opcode {
+        case .connectionClose:
+          self.receivedClose(ctx: ctx, frame: frame)
+        
+        case .ping:
+          self.pong(ctx: ctx, frame: frame)
+        
+        case .unknownControl, .unknownNonControl:
+          self.closeOnError(ctx: ctx)
+        
+        case .continuation:
+          print("CONT")
+        
+        case .text:
+          handleInput(frame.unmaskedData, in: ctx)
+        
+        case .binary:
+          handleInput(frame.unmaskedData, in: ctx)
+
+        case .pong:
+          print("unexpected pong?")
+          self.closeOnError(ctx: ctx)
+      }
+    #endif
   }
   
   func send(_ msg: IRCMessage, to channel: Channel) {
@@ -135,7 +161,11 @@ open class IRCWebSocketBridge: ChannelInboundHandler {
     }
     
     var buffer = channel.allocator.buffer(capacity: data.count)
-    buffer.write(bytes: data)
+    #if swift(>=5)
+      buffer.writeBytes(data)
+    #else
+      buffer.write(bytes: data)
+    #endif
     
     let frame = WebSocketFrame(fin: true, opcode: .text, data: buffer)
     channel.write(frame, promise: nil)
@@ -196,9 +226,15 @@ open class IRCWebSocketBridge: ChannelInboundHandler {
     var data = ctx.channel.allocator.buffer(capacity: 2)
     data.write(webSocketErrorCode: .protocolError)
     let frame = WebSocketFrame(fin: true, opcode: .connectionClose, data: data)
-    _ = ctx.write(self.wrapOutboundOut(frame)).then {
-      ctx.close(mode: .output)
-    }
+    #if swift(>=5)
+      _ = ctx.write(self.wrapOutboundOut(frame)).flatMap {
+        ctx.close(mode: .output)
+      }
+    #else
+      _ = ctx.write(self.wrapOutboundOut(frame)).then {
+        ctx.close(mode: .output)
+      }
+    #endif
     awaitingClose = true
   }
 }
