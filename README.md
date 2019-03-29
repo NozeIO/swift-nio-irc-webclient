@@ -1,6 +1,7 @@
 # SwiftNIO IRC Web Client
 
 ![Swift4](https://img.shields.io/badge/swift-4-blue.svg)
+![Swift5](https://img.shields.io/badge/swift-5-blue.svg)
 ![macOS](https://img.shields.io/badge/os-macOS-green.svg?style=flat)
 ![tuxOS](https://img.shields.io/badge/os-tuxOS-green.svg?style=flat)
 <a href="https://travis-ci.org/NozeIO/swift-nio-irc-webclient"><img src="https://travis-ci.org/NozeIO/swift-nio-irc-webclient.svg?branch=develop" /></a>
@@ -80,7 +81,7 @@ The client app is located in
 An example `Package.swift `importing the necessary modules:
 
 ```swift
-// swift-tools-version:4.0
+// swift-tools-version:5.0
 
 import PackageDescription
 
@@ -88,7 +89,7 @@ let package = Package(
     name: "MyOwnIRCServer",
     dependencies: [
         .package(url: "https://github.com/NozeIO/swift-nio-irc-webclient.git",
-                 from: "0.5.0")
+                 from: "0.7.0")
     ],
     targets: [
         .target(name: "MyIRCServer",
