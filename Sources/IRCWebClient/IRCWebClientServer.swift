@@ -2,7 +2,7 @@
 //
 // This source file is part of the swift-nio-irc open source project
 //
-// Copyright (c) 2018 ZeeZide GmbH. and the swift-nio-irc project authors
+// Copyright (c) 2018-2019 ZeeZide GmbH. and the swift-nio-irc project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
@@ -87,8 +87,13 @@ open class IRCWebClientServer {
       let address : SocketAddress
       
       if let host = configuration.host {
-        address = try SocketAddress
-          .newAddressResolving(host: host, port: configuration.port)
+        #if swift(>=5) // NIO 2 API
+          address = try SocketAddress
+            .makeAddressResolvingHost(host, port: configuration.port)
+        #else // NIO 1 API
+          address = try SocketAddress
+            .newAddressResolving(host: host, port: configuration.port)
+        #endif
       }
       else {
         var addr = sockaddr_in()
@@ -121,11 +126,21 @@ open class IRCWebClientServer {
     var sessionCounter = Atomic<Int>(value: 1)
     let config         = configuration
     
-    let upgrader = WebSocketUpgrader(
-      shouldUpgrade: { (head: HTTPRequestHead) in HTTPHeaders() },
-      upgradePipelineHandler: { ( channel: Channel, _: HTTPRequestHead ) in
-        channel.pipeline.remove(name: "de.zeezide.irc.miniirc.web.http")
-          .then { _ in
+    #if swift(>=5) // NIO 2 API
+      func shouldUpgrade(channel: Channel, head: HTTPRequestHead)
+           -> EventLoopFuture<HTTPHeaders?>
+      {
+        let promise = channel.eventLoop.makePromise(of: HTTPHeaders?.self)
+        promise.succeed(HTTPHeaders())
+        return promise.futureResult
+      }
+    
+      func upgradeHandler(channel: Channel, head: HTTPRequestHead)
+           -> EventLoopFuture<Void>
+      {
+        return channel.pipeline
+          .removeHandler(name: "de.zeezide.irc.miniirc.web.http")
+          .flatMap { ( _ ) -> EventLoopFuture<Void> in
             let nick = IRCNickName("Guest\(sessionCounter.add(1))")!
             let options = IRCClientOptions(
               port           : config.ircPort ?? DefaultIRCPort,
@@ -134,14 +149,37 @@ open class IRCWebClientServer {
               eventLoopGroup : channel.eventLoop
             )
             
-            return channel.pipeline.add(
-              name: "de.zeezide.irc.miniirc.web.socket",
-              handler: IRCWebSocketBridge(options: options)
-            )
+            return channel.pipeline
+              .addHandler(IRCWebSocketBridge(options: options),
+                          name: "de.zeezide.irc.miniirc.web.socket")
           }
       }
-    )
-    return upgrader
+    
+      return WebSocketUpgrader(shouldUpgrade: shouldUpgrade,
+                               upgradePipelineHandler: upgradeHandler)
+    #else // NIO 1 API
+      let upgrader = WebSocketUpgrader(
+        shouldUpgrade: { (head: HTTPRequestHead) in HTTPHeaders() },
+        upgradePipelineHandler: { ( channel: Channel, _: HTTPRequestHead ) in
+          channel.pipeline.remove(name: "de.zeezide.irc.miniirc.web.http")
+            .then { _ in
+              let nick = IRCNickName("Guest\(sessionCounter.add(1))")!
+              let options = IRCClientOptions(
+                port           : config.ircPort ?? DefaultIRCPort,
+                host           : config.ircHost ?? config.host ?? "localhost",
+                nickname       : nick,
+                eventLoopGroup : channel.eventLoop
+              )
+              
+              return channel.pipeline.add(
+                name: "de.zeezide.irc.miniirc.web.socket",
+                handler: IRCWebSocketBridge(options: options)
+              )
+            }
+        }
+      )
+      return upgrader
+    #endif
   }()
   
   open func makeBootstrap() -> ServerBootstrap {
@@ -161,12 +199,21 @@ open class IRCWebClientServer {
         let config: HTTPUpgradeConfiguration = (
           upgraders: [ upgrader ], completionHandler: { _ in }
         )
-        return channel.pipeline
-          .configureHTTPServerPipeline(withServerUpgrade: config)
-          .then {
-            channel.pipeline.add(name: "de.zeezide.irc.miniirc.web.http",
-                                 handler: endPoint)
-          }
+        #if swift(>=5)
+          return channel.pipeline
+            .configureHTTPServerPipeline(withServerUpgrade: config)
+            .flatMap {
+              channel.pipeline
+                .addHandler(endPoint, name: "de.zeezide.irc.miniirc.web.http")
+            }
+        #else
+          return channel.pipeline
+            .configureHTTPServerPipeline(withServerUpgrade: config)
+            .then {
+              channel.pipeline.add(name: "de.zeezide.irc.miniirc.web.http",
+                                   handler: endPoint)
+            }
+        #endif
       }
       
       // Enable TCP_NODELAY and SO_REUSEADDR for the accepted Channels
@@ -251,7 +298,11 @@ open class IRCWebClientServer {
     
     var bb = ByteBufferAllocator().buffer(capacity: 4096)
     bb.reserveCapacity(s.utf8.count)
-    bb.write(string: s)
+    #if swift(>=5)
+      bb.writeString(s)
+    #else
+      bb.write(string: s)
+    #endif
     
     return bb
   }()
