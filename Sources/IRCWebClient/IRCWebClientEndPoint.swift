@@ -52,7 +52,7 @@ open class IRCWebClientEndPoint: ChannelInboundHandler {
 fileprivate extension IRCWebClientEndPoint {
   
   func send(html: String, status: HTTPResponseStatus = .ok,
-            to ctx: ChannelHandlerContext)
+            to context: ChannelHandlerContext)
   {
     var bb = ByteBufferAllocator().buffer(capacity: html.utf8.count)
     #if swift(>=5)
@@ -60,13 +60,13 @@ fileprivate extension IRCWebClientEndPoint {
     #else
       bb.write(string: html)
     #endif
-    send(html: bb, status: status, to: ctx)
+    send(html: bb, status: status, to: context)
   }
 
   func send(html content: ByteBuffer, status: HTTPResponseStatus = .ok,
             includeBody   : Bool = true,
             closeWhenDone : Bool = true,
-            to ctx: ChannelHandlerContext)
+            to context: ChannelHandlerContext)
   {
     var headers = HTTPHeaders()
     headers.add(name: "Content-Type",   value: "text/html")
@@ -79,20 +79,20 @@ fileprivate extension IRCWebClientEndPoint {
                                         status: .ok,
                                         headers: headers)
     
-    ctx.write(wrapOutboundOut(.head(responseHead)), promise: nil)
+    context.write(wrapOutboundOut(.head(responseHead)), promise: nil)
     if includeBody {
-      ctx.write(wrapOutboundOut(.body(.byteBuffer(content))), promise: nil)
+      context.write(wrapOutboundOut(.body(.byteBuffer(content))), promise: nil)
     }
     #if swift(>=5)
-      ctx.write(wrapOutboundOut(.end(nil))).whenComplete { _ in
-        if closeWhenDone { ctx.close(promise: nil) }
+      context.write(wrapOutboundOut(.end(nil))).whenComplete { _ in
+        if closeWhenDone { context.close(promise: nil) }
       }
     #else
-      ctx.write(wrapOutboundOut(.end(nil))).whenComplete {
-        if closeWhenDone { ctx.close(promise: nil) }
+      context.write(wrapOutboundOut(.end(nil))).whenComplete {
+        if closeWhenDone { context.close(promise: nil) }
       }
     #endif
-    ctx.flush()
+    context.flush()
   }
 
 }
