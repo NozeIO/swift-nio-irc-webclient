@@ -30,18 +30,22 @@ open class IRCWebClientEndPoint: ChannelInboundHandler {
     self.content = content
   }
 
-  open func channelRead(ctx: ChannelHandlerContext, data: NIOAny) {
+  open func channelRead(context: ChannelHandlerContext, data: NIOAny) {
     let reqPart = self.unwrapInboundIn(data)
 
     guard case .head(let head) = reqPart else { return }
     
     switch head.method {
       case .GET, .HEAD:
-        send(html: content, includeBody: head.method != .HEAD, to: ctx)
+        send(html: content, includeBody: head.method != .HEAD, to: context)
       
       default:
-        send(html: "Not supported", status: .methodNotAllowed, to: ctx)
+        send(html: "Not supported", status: .methodNotAllowed, to: context)
     }
+  }
+  open func channelRead(ctx context: ChannelHandlerContext, data: NIOAny) {
+    // NIO 1 compat
+    channelRead(context: context, data: data)
   }
 }
 

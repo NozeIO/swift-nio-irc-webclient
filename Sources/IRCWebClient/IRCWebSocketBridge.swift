@@ -46,10 +46,10 @@ open class IRCWebSocketBridge: ChannelInboundHandler {
   
   // MARK: - Handler Setup
   
-  open func setupInContext(_ ctx: ChannelHandlerContext) {
+  open func setupInContext(_ context: ChannelHandlerContext) {
     assert(ircClient == nil, "IRC client already setup? \(self)")
     
-    channel = ctx.channel
+    channel = context.channel
     
     ircClient = IRCClient(options: self.options)
     ircClient?.delegate = self
@@ -62,27 +62,43 @@ open class IRCWebSocketBridge: ChannelInboundHandler {
     channel = nil
   }
   
-  open func handlerAdded(ctx: ChannelHandlerContext) {
-    setupInContext(ctx)
+  open func handlerAdded(context: ChannelHandlerContext) {
+    setupInContext(context)
   }
-  open func handlerRemoved(ctx: ChannelHandlerContext) {
+  open func handlerRemoved(context: ChannelHandlerContext) {
     teardown()
   }
 
-  open func channelActive(ctx: ChannelHandlerContext) {
-    setupInContext(ctx)
-    ctx.fireChannelActive()
+  open func channelActive(context: ChannelHandlerContext) {
+    setupInContext(context)
+    context.fireChannelActive()
   }
 
-  open func channelInactive(ctx: ChannelHandlerContext) {
+  open func channelInactive(context: ChannelHandlerContext) {
     teardown()
-    ctx.fireChannelInactive()
+    context.fireChannelInactive()
   }
+  #if swift(>=5) // NIO 2 API
+  #else // NIO 1 API
+    open func handlerAdded(ctx context: ChannelHandlerContext) {
+      handlerAdded(context: context)
+    }
+    open func handlerRemoved(ctx context: ChannelHandlerContext) {
+      handlerRemoved(context: context)
+    }
 
+    open func channelActive(ctx context: ChannelHandlerContext) {
+      channelActive(context: context)
+    }
+
+    open func channelInactive(ctx context: ChannelHandlerContext) {
+      channelInactive(context: context)
+    }
+  #endif // NIO 1 API
   
   // MARK: - Reading
   
-  func handleInput(_ bb: ByteBuffer, in ctx: ChannelHandlerContext) {
+  func handleInput(_ bb: ByteBuffer, in context: ChannelHandlerContext) {
     guard let ircClient = ircClient else {
       send("ERROR: not connected to IRC?")
       return
@@ -99,60 +115,72 @@ open class IRCWebSocketBridge: ChannelInboundHandler {
     }
   }
   
-  /// Process WebSocket frames.
-  open func channelRead(ctx: ChannelHandlerContext, data: NIOAny) {
-    let frame = self.unwrapInboundIn(data)
-    
-    #if swift(>=5) // NIO 2 API
+  open func channelReadComplete(context: ChannelHandlerContext) {
+    context.flush()
+  }
+  
+  #if swift(>=5) // NIO 2 API
+    /// Process WebSocket frames.
+    open func channelRead(context: ChannelHandlerContext, data: NIOAny) {
+      let frame = self.unwrapInboundIn(data)
+      
       switch frame.opcode {
         case .connectionClose:
-          self.receivedClose(ctx: ctx, frame: frame)
+          self.receivedClose(in: context, frame: frame)
         
         case .ping:
-          self.pong(ctx: ctx, frame: frame)
+          self.pong(in: context, frame: frame)
         
         case .continuation:
           print("CONT")
         
         case .text:
-          handleInput(frame.unmaskedData, in: ctx)
+          handleInput(frame.unmaskedData, in: context)
         
         case .binary:
-          handleInput(frame.unmaskedData, in: ctx)
+          handleInput(frame.unmaskedData, in: context)
 
         case .pong:
           print("unexpected pong?")
-          self.closeOnError(ctx: ctx)
+          self.closeOnError(in: context)
         
         default:
-          self.closeOnError(ctx: ctx)
+          self.closeOnError(in: context)
       }
-    #else // NIO 1 API
+    }
+  #else // NIO 1 API
+    /// Process WebSocket frames.
+    open func channelRead(ctx context: ChannelHandlerContext, data: NIOAny) {
+      let frame = self.unwrapInboundIn(data)
+    
       switch frame.opcode {
         case .connectionClose:
-          self.receivedClose(ctx: ctx, frame: frame)
+          self.receivedClose(in: context, frame: frame)
         
         case .ping:
-          self.pong(ctx: ctx, frame: frame)
+          self.pong(in: context, frame: frame)
         
         case .unknownControl, .unknownNonControl:
-          self.closeOnError(ctx: ctx)
+          self.closeOnError(in: context)
         
         case .continuation:
           print("CONT")
         
         case .text:
-          handleInput(frame.unmaskedData, in: ctx)
+          handleInput(frame.unmaskedData, in: context)
         
         case .binary:
-          handleInput(frame.unmaskedData, in: ctx)
+          handleInput(frame.unmaskedData, in: context)
 
         case .pong:
           print("unexpected pong?")
-          self.closeOnError(ctx: ctx)
+          self.closeOnError(in: context)
       }
-    #endif
-  }
+    }
+    open func channelReadComplete(ctx context: ChannelHandlerContext) {
+      channelReadComplete(context: context)
+    }
+  #endif // NIO 1 API
   
   func send(_ msg: IRCMessage, to channel: Channel) {
     guard let data = try? JSONEncoder().encode(msg) else {
@@ -175,8 +203,8 @@ open class IRCWebSocketBridge: ChannelInboundHandler {
   func send(_ s: String, to channel: Channel) {
     send(IRCMessage(command: .NOTICE([.everything], s)), to: channel)
   }
-  func send(_ s: String, to ctx: ChannelHandlerContext) {
-    send(s, to: ctx.channel)
+  func send(_ s: String, to context: ChannelHandlerContext) {
+    send(s, to: context.channel)
   }
   func send(_ s: String) {
     guard let channel = channel else { return }
@@ -189,26 +217,24 @@ open class IRCWebSocketBridge: ChannelInboundHandler {
     channel.flush()
   }
 
-  open func channelReadComplete(ctx: ChannelHandlerContext) {
-    ctx.flush()
-  }
-  
-  private func receivedClose(ctx: ChannelHandlerContext, frame: WebSocketFrame) {
+  private func receivedClose(in context: ChannelHandlerContext,
+                             frame: WebSocketFrame)
+  {
     if awaitingClose {
-      return ctx.close(promise: nil)
+      return context.close(promise: nil)
     }
     
     var data          = frame.unmaskedData
     let closeDataCode = data.readSlice(length: 2)
-                     ?? ctx.channel.allocator.buffer(capacity: 0)
+                     ?? context.channel.allocator.buffer(capacity: 0)
     let closeFrame    = WebSocketFrame(fin: true, opcode: .connectionClose,
                                        data: closeDataCode)
-    _ = ctx.write(wrapOutboundOut(closeFrame)).map { () in
-      ctx.close(promise: nil)
+    _ = context.write(wrapOutboundOut(closeFrame)).map { () in
+      context.close(promise: nil)
     }
   }
   
-  private func pong(ctx: ChannelHandlerContext, frame: WebSocketFrame) {
+  private func pong(in context: ChannelHandlerContext, frame: WebSocketFrame) {
     var frameData  = frame.data
     let maskingKey = frame.maskKey
     
@@ -217,22 +243,22 @@ open class IRCWebSocketBridge: ChannelInboundHandler {
     }
     
     let responseFrame = WebSocketFrame(fin: true, opcode: .pong, data: frameData)
-    ctx.write(self.wrapOutboundOut(responseFrame), promise: nil)
+    context.write(self.wrapOutboundOut(responseFrame), promise: nil)
   }
   
-  private func closeOnError(ctx: ChannelHandlerContext) {
+  private func closeOnError(in context: ChannelHandlerContext) {
     // We have hit an error, we want to close. We do that by sending a close
     // frame and then shutting down the write side of the connection.
-    var data = ctx.channel.allocator.buffer(capacity: 2)
+    var data = context.channel.allocator.buffer(capacity: 2)
     data.write(webSocketErrorCode: .protocolError)
     let frame = WebSocketFrame(fin: true, opcode: .connectionClose, data: data)
     #if swift(>=5)
-      _ = ctx.write(self.wrapOutboundOut(frame)).flatMap {
-        ctx.close(mode: .output)
+      _ = context.write(self.wrapOutboundOut(frame)).flatMap {
+        context.close(mode: .output)
       }
     #else
-      _ = ctx.write(self.wrapOutboundOut(frame)).then {
-        ctx.close(mode: .output)
+      _ = context.write(self.wrapOutboundOut(frame)).then {
+        context.close(mode: .output)
       }
     #endif
     awaitingClose = true

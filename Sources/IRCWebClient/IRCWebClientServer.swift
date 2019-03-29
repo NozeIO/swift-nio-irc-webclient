@@ -202,7 +202,7 @@ open class IRCWebClientServer {
         #if swift(>=5)
           return channel.pipeline
             .configureHTTPServerPipeline(withServerUpgrade: config)
-            .flatMap { _ in
+            .flatMap {
               channel.pipeline
                 .addHandler(endPoint, name: "de.zeezide.irc.miniirc.web.http")
             }
