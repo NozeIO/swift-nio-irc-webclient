@@ -12,6 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+import class NIOConcurrencyHelpers.NIOAtomic
 import NIO
 import NIOHTTP1
 import NIOWebSocket
@@ -118,7 +119,7 @@ open class IRCWebClientServer {
   // MARK: - Bootstrap
 
   lazy var upgrader : WebSocketUpgrader = {
-    var sessionCounter = Atomic<Int>(value: 1)
+    var sessionCounter = NIOAtomic.makeAtomic(value: 1)
     let config         = configuration
     
     func shouldUpgrade(channel: Channel, head: HTTPRequestHead)
