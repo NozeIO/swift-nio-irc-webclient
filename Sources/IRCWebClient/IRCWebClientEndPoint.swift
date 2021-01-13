@@ -2,7 +2,7 @@
 //
 // This source file is part of the swift-nio-irc open source project
 //
-// Copyright (c) 2018-2019 ZeeZide GmbH. and the swift-nio-irc project authors
+// Copyright (c) 2018-2020 ZeeZide GmbH. and the swift-nio-irc project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
@@ -55,11 +55,7 @@ fileprivate extension IRCWebClientEndPoint {
             to context: ChannelHandlerContext)
   {
     var bb = ByteBufferAllocator().buffer(capacity: html.utf8.count)
-    #if swift(>=5)
-      bb.writeString(html)
-    #else
-      bb.write(string: html)
-    #endif
+    bb.writeString(html)
     send(html: bb, status: status, to: context)
   }
 
@@ -83,16 +79,10 @@ fileprivate extension IRCWebClientEndPoint {
     if includeBody {
       context.write(wrapOutboundOut(.body(.byteBuffer(content))), promise: nil)
     }
-    #if swift(>=5)
-      context.write(wrapOutboundOut(.end(nil))).whenComplete { _ in
-        if closeWhenDone { context.close(promise: nil) }
-      }
-    #else
-      context.write(wrapOutboundOut(.end(nil))).whenComplete {
-        if closeWhenDone { context.close(promise: nil) }
-      }
-    #endif
+
+    context.write(wrapOutboundOut(.end(nil))).whenComplete { _ in
+      if closeWhenDone { context.close(promise: nil) }
+    }
     context.flush()
   }
-
 }
