@@ -118,7 +118,7 @@ open class IRCWebClientServer {
 
   // MARK: - Bootstrap
 
-  lazy var upgrader : WebSocketUpgrader = {
+  lazy var upgrader : NIOWebSocketServerUpgrader = {
     var sessionCounter = NIOAtomic.makeAtomic(value: 1)
     let config         = configuration
     
@@ -150,8 +150,8 @@ open class IRCWebClientServer {
         }
     }
   
-    return WebSocketUpgrader(shouldUpgrade: shouldUpgrade,
-                             upgradePipelineHandler: upgradeHandler)
+    return NIOWebSocketServerUpgrader(shouldUpgrade: shouldUpgrade,
+                                      upgradePipelineHandler: upgradeHandler)
   }()
   
   open func makeBootstrap() -> ServerBootstrap {
@@ -168,7 +168,7 @@ open class IRCWebClientServer {
       
       // Set the handlers that are applied to the accepted Channels
       .childChannelInitializer { channel in
-        let config: HTTPUpgradeConfiguration = (
+        let config: NIOHTTPServerUpgradeConfiguration = (
           upgraders: [ upgrader ], completionHandler: { _ in }
         )
         return channel.pipeline
