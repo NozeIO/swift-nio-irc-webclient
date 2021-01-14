@@ -2,7 +2,7 @@
 //
 // This source file is part of the swift-nio-irc open source project
 //
-// Copyright (c) 2018-2019 ZeeZide GmbH. and the swift-nio-irc project authors
+// Copyright (c) 2018-2020 ZeeZide GmbH. and the swift-nio-irc project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
@@ -19,7 +19,8 @@ import NIOHTTP1
  * A small HTTP handler which just delivers the single-page webapp included in
  * the module.
  */
-open class IRCWebClientEndPoint: ChannelInboundHandler {
+open class IRCWebClientEndPoint: ChannelInboundHandler, RemovableChannelHandler
+{
   
   public typealias InboundIn   = HTTPServerRequestPart
   public typealias OutboundOut = HTTPServerResponsePart
@@ -52,21 +53,17 @@ open class IRCWebClientEndPoint: ChannelInboundHandler {
 fileprivate extension IRCWebClientEndPoint {
   
   func send(html: String, status: HTTPResponseStatus = .ok,
-            to ctx: ChannelHandlerContext)
+            to context: ChannelHandlerContext)
   {
     var bb = ByteBufferAllocator().buffer(capacity: html.utf8.count)
-    #if swift(>=5)
-      bb.writeString(html)
-    #else
-      bb.write(string: html)
-    #endif
-    send(html: bb, status: status, to: ctx)
+    bb.writeString(html)
+    send(html: bb, status: status, to: context)
   }
 
   func send(html content: ByteBuffer, status: HTTPResponseStatus = .ok,
             includeBody   : Bool = true,
             closeWhenDone : Bool = true,
-            to ctx: ChannelHandlerContext)
+            to context: ChannelHandlerContext)
   {
     var headers = HTTPHeaders()
     headers.add(name: "Content-Type",   value: "text/html")
@@ -79,20 +76,14 @@ fileprivate extension IRCWebClientEndPoint {
                                         status: .ok,
                                         headers: headers)
     
-    ctx.write(wrapOutboundOut(.head(responseHead)), promise: nil)
+    context.write(wrapOutboundOut(.head(responseHead)), promise: nil)
     if includeBody {
-      ctx.write(wrapOutboundOut(.body(.byteBuffer(content))), promise: nil)
+      context.write(wrapOutboundOut(.body(.byteBuffer(content))), promise: nil)
     }
-    #if swift(>=5)
-      ctx.write(wrapOutboundOut(.end(nil))).whenComplete { _ in
-        if closeWhenDone { ctx.close(promise: nil) }
-      }
-    #else
-      ctx.write(wrapOutboundOut(.end(nil))).whenComplete {
-        if closeWhenDone { ctx.close(promise: nil) }
-      }
-    #endif
-    ctx.flush()
-  }
 
+    context.write(wrapOutboundOut(.end(nil))).whenComplete { _ in
+      if closeWhenDone { context.close(promise: nil) }
+    }
+    context.flush()
+  }
 }
