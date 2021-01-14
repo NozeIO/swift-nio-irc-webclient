@@ -19,7 +19,8 @@ import NIOHTTP1
  * A small HTTP handler which just delivers the single-page webapp included in
  * the module.
  */
-open class IRCWebClientEndPoint: ChannelInboundHandler {
+open class IRCWebClientEndPoint: ChannelInboundHandler, RemovableChannelHandler
+{
   
   public typealias InboundIn   = HTTPServerRequestPart
   public typealias OutboundOut = HTTPServerResponsePart

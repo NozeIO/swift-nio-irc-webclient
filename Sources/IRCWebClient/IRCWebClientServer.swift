@@ -118,7 +118,7 @@ open class IRCWebClientServer {
 
   // MARK: - Bootstrap
 
-  lazy var upgrader : NIOWebSocketServerUpgrader = {
+  lazy var upgrader : HTTPServerProtocolUpgrader = {
     var sessionCounter = NIOAtomic.makeAtomic(value: 1)
     let config         = configuration
     
